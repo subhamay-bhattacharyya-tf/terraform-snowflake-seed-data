@@ -34,11 +34,8 @@ func TestSeedInlineSQL(t *testing.T) {
 		_ = db.Close()
 	}()
 
-	// Inline SQL to insert test data
-	sqlText := fmt.Sprintf(`
-		INSERT INTO %s.%s.%s (id, name)
-		VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
-	`, database, schema, table)
+	// Inline SQL to insert test data (single line to avoid Terraform multi-line string issues)
+	sqlText := fmt.Sprintf("INSERT INTO %s.%s.%s (id, name) VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');", database, schema, table)
 
 	seedConfig := map[string]interface{}{
 		"enabled":     true,
@@ -100,11 +97,8 @@ func TestSeedBlockedEnvironment(t *testing.T) {
 		_ = db.Close()
 	}()
 
-	// Inline SQL to insert test data
-	sqlText := fmt.Sprintf(`
-		INSERT INTO %s.%s.%s (id, name)
-		VALUES (1, 'Should Not Appear');
-	`, database, schema, table)
+	// Inline SQL to insert test data (single line)
+	sqlText := fmt.Sprintf("INSERT INTO %s.%s.%s (id, name) VALUES (1, 'Should Not Appear');", database, schema, table)
 
 	// Set environment to "prod" which should be blocked
 	seedConfig := map[string]interface{}{
@@ -167,11 +161,8 @@ func TestSeedDisabled(t *testing.T) {
 		_ = db.Close()
 	}()
 
-	// Inline SQL to insert test data
-	sqlText := fmt.Sprintf(`
-		INSERT INTO %s.%s.%s (id, name)
-		VALUES (1, 'Should Not Appear');
-	`, database, schema, table)
+	// Inline SQL to insert test data (single line)
+	sqlText := fmt.Sprintf("INSERT INTO %s.%s.%s (id, name) VALUES (1, 'Should Not Appear');", database, schema, table)
 
 	// Seeding is disabled
 	seedConfig := map[string]interface{}{

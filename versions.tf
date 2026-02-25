@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Versions
+# Terraform Snowflake Module - Seed Data Versions
 # -----------------------------------------------------------------------------
 # This file specifies the required Terraform version and provider versions
 # for the module.
@@ -11,7 +11,11 @@ terraform {
   required_providers {
     snowflake = {
       source  = "snowflakedb/snowflake"
-      version = ">= 0.87.0"
+      version = ">= 0.89.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3.0.0"
     }
   }
 }

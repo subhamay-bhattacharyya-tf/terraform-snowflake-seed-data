@@ -1,42 +1,45 @@
-# Basic Example - Single Warehouse
+# Basic Seed Example
 
-This example demonstrates how to create a single Snowflake warehouse using the module.
+This example demonstrates how to seed data into a Snowflake table using inline SQL.
 
 ## Usage
 
 ```hcl
-module "warehouse" {
-  source = "../.."
+module "seed" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data"
 
-  warehouse_configs = {
-    "my_warehouse" = {
-      name                      = "MY_WAREHOUSE"
-      warehouse_size            = "X-SMALL"
-      warehouse_type            = "STANDARD"
-      auto_resume               = true
-      auto_suspend              = 60
-      initially_suspended       = true
-      min_cluster_count         = 1
-      max_cluster_count         = 1
-      scaling_policy            = "STANDARD"
-      enable_query_acceleration = false
-      comment                   = "My test warehouse"
-    }
+  seed = {
+    enabled     = true
+    environment = "dev"
+    database    = "MY_DATABASE"
+    schema      = "MY_SCHEMA"
+    table       = "MY_TABLE"
+    sql_text    = <<-EOT
+      INSERT INTO MY_DATABASE.MY_SCHEMA.MY_TABLE (id, name)
+      VALUES (1, 'Test'), (2, 'Sample');
+    EOT
   }
 }
 ```
 
-## Inputs
+## Using a JSON file
 
-| Name | Description | Type | Required |
-|------|-------------|------|----------|
-| warehouse_configs | Map of warehouse configuration objects | map(object) | yes |
+```hcl
+module "seed" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data"
 
-## Outputs
+  seed = jsondecode(file("seed.json"))
+}
+```
 
-| Name | Description |
-|------|-------------|
-| warehouse_names | The names of the created warehouses |
-| warehouse_fully_qualified_names | The fully qualified names of the warehouses |
-| warehouse_sizes | The sizes of the warehouses |
-| warehouse_states | The states of the warehouses |
+Example `seed.json`:
+```json
+{
+  "enabled": true,
+  "environment": "dev",
+  "database": "MY_DATABASE",
+  "schema": "MY_SCHEMA",
+  "table": "MY_TABLE",
+  "sql_text": "INSERT INTO MY_DATABASE.MY_SCHEMA.MY_TABLE (id, name) VALUES (1, 'Test');"
+}
+```

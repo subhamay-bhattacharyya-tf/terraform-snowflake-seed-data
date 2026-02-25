@@ -1,25 +1,25 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Basic Example Outputs
+# Terraform Snowflake Module - Seed Data Basic Example Outputs
 # -----------------------------------------------------------------------------
 # This file defines the output values for the basic example.
 # -----------------------------------------------------------------------------
 
-output "warehouse_names" {
-  description = "The names of the created warehouses"
-  value       = module.warehouse.warehouse_names
+output "seed_enabled" {
+  description = "Whether seeding is enabled"
+  value       = module.seed.seed_enabled
 }
 
-output "warehouse_fully_qualified_names" {
-  description = "The fully qualified names of the warehouses"
-  value       = module.warehouse.warehouse_fully_qualified_names
+output "seed_executed" {
+  description = "Whether the seed was actually executed"
+  value       = module.seed.seed_executed
 }
 
-output "warehouse_sizes" {
-  description = "The sizes of the warehouses"
-  value       = module.warehouse.warehouse_sizes
+output "seed_blocked" {
+  description = "Whether seeding was blocked due to environment"
+  value       = module.seed.seed_blocked
 }
 
-output "warehouse_states" {
-  description = "The states of the warehouses (STARTED or SUSPENDED)"
-  value       = module.warehouse.warehouse_states
+output "seed_target" {
+  description = "The target table for seeding"
+  value       = module.seed.seed_target
 }

@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Basic Example Main
+# Terraform Snowflake Module - Seed Data Basic Example
 # -----------------------------------------------------------------------------
-# This example demonstrates how to create a single Snowflake warehouse.
+# This example demonstrates how to seed data into a Snowflake table.
 # -----------------------------------------------------------------------------
 
-module "warehouse" {
+module "seed" {
   source = "../.."
 
-  warehouse_configs = var.warehouse_configs
+  seed = var.seed
 }

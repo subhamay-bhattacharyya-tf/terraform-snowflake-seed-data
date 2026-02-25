@@ -1,25 +1,23 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Basic Example Variables
+# Terraform Snowflake Module - Seed Data Basic Example Variables
 # -----------------------------------------------------------------------------
 # This file defines the input variables for the basic example.
 # -----------------------------------------------------------------------------
 
-variable "warehouse_configs" {
-  description = "Map of configuration objects for Snowflake warehouses"
-  type = map(object({
-    name                      = string
-    warehouse_size            = optional(string, "X-SMALL")
-    warehouse_type            = optional(string, "STANDARD")
-    auto_resume               = optional(bool, true)
-    auto_suspend              = optional(number, 60)
-    initially_suspended       = optional(bool, true)
-    min_cluster_count         = optional(number, 1)
-    max_cluster_count         = optional(number, 1)
-    scaling_policy            = optional(string, "STANDARD")
-    enable_query_acceleration = optional(bool, false)
-    comment                   = optional(string, null)
-  }))
-  default = {}
+variable "seed" {
+  description = "Seed configuration object"
+  type = object({
+    enabled                = optional(bool, false)
+    environment            = optional(string, "dev")
+    database               = string
+    schema                 = string
+    table                  = string
+    blocked_environments   = optional(list(string), ["prod", "production"])
+    script_path            = optional(string)
+    sql_text               = optional(string)
+    seed_version           = optional(string, "v1")
+    rerun_on_script_change = optional(bool, false)
+  })
 }
 
 # Snowflake authentication variables

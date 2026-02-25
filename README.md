@@ -1,101 +1,72 @@
-# Terraform Snowflake Module - Warehouse
+# Terraform Snowflake Module - Seed Data
 
-![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-snowflake-module-template/actions/workflows/ci.yaml/badge.svg)&nbsp;![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?logo=snowflake&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Repo Size](https://img.shields.io/github/repo-size/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-snowflake-module-template)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/e69b8c605f94271ea3441aabb7e8820b/raw/terraform-snowflake-module-template.json?)
+![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data/actions/workflows/ci.yaml/badge.svg)&nbsp;![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?logo=snowflake&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/770827eb380b5d92a1f3e7b58e0e63ae/raw/terraform-snowflake-seed-data.json?)
 
-A Terraform module for creating and managing Snowflake warehouses using a map of configuration objects. Supports creating single or multiple warehouses with a single module call.
+A Terraform module for seeding data into Snowflake tables. Supports inline SQL or external script files with environment-based safety controls and re-run management.
 
 ## Features
 
-- Map-based configuration for creating single or multiple warehouses
+- Seed data using inline SQL or external `.sql` files
+- Environment-based blocking (e.g., prevent seeding in production)
+- Version-controlled re-runs via `seed_version`
+- Optional automatic re-run on script content changes
 - Built-in input validation with descriptive error messages
-- Sensible defaults for optional properties
-- Outputs keyed by warehouse identifier for easy reference
-- Support for all Snowflake warehouse sizes and configurations
 
 ## Usage
 
-### Single Warehouse
+### Inline SQL
 
 ```hcl
-module "warehouse" {
-  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-module-template"
+module "seed" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data"
 
-  warehouse_configs = {
-    "my_warehouse" = {
-      name                      = "MY_WAREHOUSE"
-      warehouse_size            = "X-SMALL"
-      warehouse_type            = "STANDARD"
-      auto_resume               = true
-      auto_suspend              = 60
-      initially_suspended       = true
-      min_cluster_count         = 1
-      max_cluster_count         = 1
-      scaling_policy            = "STANDARD"
-      enable_query_acceleration = false
-      comment                   = "My test warehouse"
-    }
+  seed = {
+    enabled     = true
+    environment = "dev"
+    database    = "MY_DATABASE"
+    schema      = "MY_SCHEMA"
+    table       = "USERS"
+    sql_text    = <<-EOT
+      INSERT INTO MY_DATABASE.MY_SCHEMA.USERS (id, name, email)
+      VALUES
+        (1, 'Alice', 'alice@example.com'),
+        (2, 'Bob', 'bob@example.com');
+    EOT
   }
 }
 ```
 
-### Multiple Warehouses
+### External Script File
 
 ```hcl
-locals {
-  warehouses = {
-    "adhoc_wh" = {
-      name                      = "SN_TEST_ADHOC_WH"
-      warehouse_size            = "X-SMALL"
-      warehouse_type            = "STANDARD"
-      auto_resume               = true
-      auto_suspend              = 60
-      initially_suspended       = true
-      min_cluster_count         = 1
-      max_cluster_count         = 1
-      scaling_policy            = "STANDARD"
-      enable_query_acceleration = false
-      comment                   = "Development and sandbox warehouse for ad-hoc queries"
-    }
-    "load_wh" = {
-      name                      = "SN_TEST_LOAD_WH"
-      warehouse_size            = "X-SMALL"
-      warehouse_type            = "STANDARD"
-      auto_resume               = true
-      auto_suspend              = 60
-      initially_suspended       = true
-      min_cluster_count         = 1
-      max_cluster_count         = 1
-      scaling_policy            = "STANDARD"
-      enable_query_acceleration = false
-      comment                   = "Dedicated ingestion warehouse for loading files"
-    }
-    "transform_wh" = {
-      name                      = "SN_TEST_TRANSFORM_WH"
-      warehouse_size            = "MEDIUM"
-      warehouse_type            = "STANDARD"
-      auto_resume               = true
-      auto_suspend              = 300
-      initially_suspended       = true
-      min_cluster_count         = 1
-      max_cluster_count         = 3
-      scaling_policy            = "STANDARD"
-      enable_query_acceleration = true
-      comment                   = "ETL/ELT warehouse for transformations"
-    }
+module "seed" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data"
+
+  seed = {
+    enabled                = true
+    environment            = "dev"
+    database               = "MY_DATABASE"
+    schema                 = "MY_SCHEMA"
+    table                  = "USERS"
+    script_path            = "${path.module}/seed.sql"
+    rerun_on_script_change = true
   }
 }
+```
 
-module "warehouses" {
-  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-module-template"
+### Using JSON Configuration
 
-  warehouse_configs = local.warehouses
+```hcl
+module "seed" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-snowflake-seed-data"
+
+  seed = jsondecode(file("seed.json"))
 }
 ```
 
 ## Examples
 
-- [Basic (Single Warehouse)](examples/basic) - Create a single warehouse
-- [Multiple Warehouses](examples/multiple-warehouses) - Create multiple warehouses
+- [Basic](examples/basic) - Seed data using inline SQL or script file
 
 ## Requirements
 
@@ -103,78 +74,93 @@ module "warehouses" {
 |------|---------|
 | terraform | >= 1.3.0 |
 | snowflake | >= 0.87.0 |
+| null | >= 3.0.0 |
 
 ## Providers
 
 | Name | Source | Version |
 |------|--------|---------|
 | snowflake | snowflakedb/snowflake | >= 0.87.0 |
+| null | hashicorp/null | >= 3.0.0 |
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| warehouse_configs | Map of configuration objects for Snowflake warehouses | `map(object)` | `{}` | no |
+| Name | Description | Type | Required |
+|------|-------------|------|----------|
+| seed | Seed configuration object | `object` | yes |
 
-### warehouse_configs Object Properties
+### seed Object Properties
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| name | string | - | Warehouse identifier (required) |
-| warehouse_size | string | "X-SMALL" | Size of the warehouse |
-| warehouse_type | string | "STANDARD" | Type of warehouse (STANDARD, SNOWPARK-OPTIMIZED) |
-| auto_resume | bool | true | Auto-resume when queries are submitted |
-| auto_suspend | number | 60 | Seconds of inactivity before auto-suspend |
-| initially_suspended | bool | true | Start in suspended state |
-| min_cluster_count | number | 1 | Minimum number of clusters |
-| max_cluster_count | number | 1 | Maximum number of clusters |
-| scaling_policy | string | "STANDARD" | Scaling policy (STANDARD, ECONOMY) |
-| enable_query_acceleration | bool | false | Enable query acceleration |
-| comment | string | null | Description of the warehouse |
+| enabled | bool | `false` | Enable/disable seeding |
+| environment | string | `"dev"` | Current environment name |
+| database | string | - | Target database name (required) |
+| schema | string | - | Target schema name (required) |
+| table | string | - | Target table name (required) |
+| blocked_environments | list(string) | `["prod", "production"]` | Environments where seeding is blocked |
+| script_path | string | `null` | Path to external `.sql` file |
+| sql_text | string | `null` | Inline SQL text |
+| seed_version | string | `"v1"` | Version string for re-run control |
+| rerun_on_script_change | bool | `false` | Re-run when script content changes |
 
-### Valid Warehouse Sizes
-
-- X-SMALL (XSMALL)
-- SMALL
-- MEDIUM
-- LARGE
-- X-LARGE (XLARGE)
-- 2X-LARGE (XXLARGE, X2LARGE)
-- 3X-LARGE (XXXLARGE, X3LARGE)
-- 4X-LARGE (X4LARGE)
-- 5X-LARGE (X5LARGE)
-- 6X-LARGE (X6LARGE)
-
-### Valid Warehouse Types
-
-- STANDARD
-- SNOWPARK-OPTIMIZED
-
-### Valid Scaling Policies
-
-- STANDARD
-- ECONOMY
+**Note:** Either `script_path` or `sql_text` must be provided. If both are provided, `script_path` takes precedence.
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| warehouse_names | Map of warehouse names keyed by identifier |
-| warehouse_fully_qualified_names | Map of fully qualified warehouse names |
-| warehouse_sizes | Map of warehouse sizes |
-| warehouse_states | Map of warehouse states (STARTED or SUSPENDED) |
-| warehouses | All warehouse resources |
+| seed_enabled | Whether seeding is enabled in configuration |
+| seed_executed | Whether the seed was actually executed |
+| seed_blocked | Whether seeding was blocked due to environment |
+| seed_environment | The current environment |
+| seed_target | Target table (database.schema.table) |
+| seed_version | The seed version used |
+| seed_trigger_key | Computed trigger key for debugging |
+| seed_sql_source | Source of SQL (script_path or sql_text) |
+
+## Re-run Controls
+
+### Manual Re-run
+
+Bump `seed_version` to force a re-run:
+
+```hcl
+seed = {
+  # ...
+  seed_version = "v2"  # Changed from "v1"
+}
+```
+
+### Automatic Re-run on Script Changes
+
+Enable `rerun_on_script_change` to automatically re-run when the SQL script content changes:
+
+```hcl
+seed = {
+  # ...
+  script_path            = "${path.module}/seed.sql"
+  rerun_on_script_change = true
+}
+```
+
+## Environment Safety
+
+By default, seeding is blocked in `prod` and `production` environments (case-insensitive). Customize the blocked list:
+
+```hcl
+seed = {
+  # ...
+  blocked_environments = ["prod", "production", "staging", "uat"]
+}
+```
 
 ## Validation
 
 The module validates inputs and provides descriptive error messages for:
 
-- Empty warehouse name
-- Invalid warehouse size
-- Invalid warehouse type
-- Invalid scaling policy
-- Negative auto_suspend value
-- min_cluster_count exceeding max_cluster_count
+- Missing `script_path` and `sql_text` (at least one required)
+- Empty `database`, `schema`, or `table` names
 
 ## Testing
 
@@ -192,37 +178,6 @@ Required environment variables for testing:
 - `SNOWFLAKE_USER` - Snowflake username
 - `SNOWFLAKE_ROLE` - Snowflake role (e.g., "SYSADMIN")
 - `SNOWFLAKE_PRIVATE_KEY` - Snowflake private key for key-pair authentication
-
-## CI/CD Configuration
-
-The CI workflow runs on:
-- Push to `main`, `feature/**`, and `bug/**` branches (when `*.tf`, `examples/**`, or `test/**` changes)
-- Pull requests to `main` (when `*.tf`, `examples/**`, or `test/**` changes)
-- Manual workflow dispatch
-
-The workflow includes:
-- Terraform validation and format checking
-- Examples validation
-- Terratest integration tests (output displayed in GitHub Step Summary)
-- Changelog generation (non-main branches)
-- Semantic release (main branch only)
-
-The CI workflow uses the following GitHub organization variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `TERRAFORM_VERSION` | Terraform version for CI jobs | `1.3.0` |
-| `GO_VERSION` | Go version for Terratest | `1.21` |
-| `SNOWFLAKE_ORGANIZATION_NAME` | Snowflake organization name | - |
-| `SNOWFLAKE_ACCOUNT_NAME` | Snowflake account name | - |
-| `SNOWFLAKE_USER` | Snowflake username | - |
-| `SNOWFLAKE_ROLE` | Snowflake role (e.g., SYSADMIN) | - |
-
-The following GitHub secrets are required for Terratest integration tests:
-
-| Secret | Description | Required |
-|--------|-------------|----------|
-| `SNOWFLAKE_PRIVATE_KEY` | Snowflake private key for key-pair authentication | Yes |
 
 ## License
 

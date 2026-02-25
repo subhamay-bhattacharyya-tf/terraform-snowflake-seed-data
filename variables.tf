@@ -1,55 +1,61 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Variables
+# Terraform Snowflake Module - Seed Data Variables
 # -----------------------------------------------------------------------------
-# This file defines the input variables for the module.
+# This file defines the input variables for the seed data module.
 # -----------------------------------------------------------------------------
 
-variable "warehouse_configs" {
-  description = "Map of configuration objects for Snowflake warehouses"
-  type = map(object({
-    name                      = string
-    warehouse_size            = optional(string, "X-SMALL")
-    warehouse_type            = optional(string, "STANDARD")
-    auto_resume               = optional(bool, true)
-    auto_suspend              = optional(number, 60)
-    initially_suspended       = optional(bool, true)
-    min_cluster_count         = optional(number, 1)
-    max_cluster_count         = optional(number, 1)
-    scaling_policy            = optional(string, "STANDARD")
-    enable_query_acceleration = optional(bool, false)
-    comment                   = optional(string, null)
-  }))
-  default = {}
+variable "seed" {
+  description = <<EOT
+Seed configuration object. Designed to be passed via:
+- jsondecode(file("seed.json"))
+- or as a Terraform object directly.
+
+Notes:
+- Provide either script_path OR sql_text.
+- If both provided, script_path wins.
+EOT
+
+  type = object({
+    enabled     = optional(bool, false)
+    environment = optional(string, "devl")
+
+    # Target table information
+    database = string
+    schema   = string
+    table    = string
+
+    # Safety: block seeding in these envs (case-insensitive match)
+    blocked_environments = optional(list(string), ["prod", "production"])
+
+    # One of these two must be provided:
+    script_path = optional(string) # path to .sql file
+    sql_text    = optional(string) # inline SQL
+
+    # Re-run controls
+    seed_version           = optional(string, "v1") # bump intentionally to re-run
+    rerun_on_script_change = optional(bool, false)  # re-run when script file changes
+  })
 
   validation {
-    condition     = alltrue([for k, wh in var.warehouse_configs : length(wh.name) > 0])
-    error_message = "Warehouse name must not be empty."
+    condition = (
+      try(length(var.seed.script_path) > 0, false) ||
+      try(length(var.seed.sql_text) > 0, false)
+    )
+    error_message = "seed.script_path or seed.sql_text must be provided (non-empty)."
   }
 
   validation {
-    condition = alltrue([for k, wh in var.warehouse_configs : contains([
-      "X-SMALL", "XSMALL", "SMALL", "MEDIUM", "LARGE"
-    ], upper(wh.warehouse_size))])
-    error_message = "Invalid warehouse_size. Valid values: X-SMALL, SMALL, MEDIUM, LARGE."
+    condition     = length(var.seed.database) > 0
+    error_message = "seed.database must be provided (non-empty)."
   }
 
   validation {
-    condition     = alltrue([for k, wh in var.warehouse_configs : contains(["STANDARD"], upper(wh.warehouse_type))])
-    error_message = "Invalid warehouse_type. Valid values: STANDARD."
+    condition     = length(var.seed.schema) > 0
+    error_message = "seed.schema must be provided (non-empty)."
   }
 
   validation {
-    condition     = alltrue([for k, wh in var.warehouse_configs : contains(["STANDARD", "ECONOMY"], upper(wh.scaling_policy))])
-    error_message = "Invalid scaling_policy. Valid values: STANDARD, ECONOMY."
-  }
-
-  validation {
-    condition     = alltrue([for k, wh in var.warehouse_configs : wh.auto_suspend >= 0])
-    error_message = "auto_suspend must be >= 0 seconds."
-  }
-
-  validation {
-    condition     = alltrue([for k, wh in var.warehouse_configs : wh.min_cluster_count <= wh.max_cluster_count])
-    error_message = "min_cluster_count must not exceed max_cluster_count."
+    condition     = length(var.seed.table) > 0
+    error_message = "seed.table must be provided (non-empty)."
   }
 }

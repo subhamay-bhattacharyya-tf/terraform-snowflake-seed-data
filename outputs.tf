@@ -1,30 +1,45 @@
 # -----------------------------------------------------------------------------
-# Terraform Snowflake Module Template - Outputs
+# Terraform Snowflake Module - Seed Data Outputs
 # -----------------------------------------------------------------------------
-# This file defines the output values for the module.
+# This file defines the output values for the seed data module.
 # -----------------------------------------------------------------------------
 
-output "warehouse_names" {
-  description = "The names of the created warehouses."
-  value       = { for k, v in snowflake_warehouse.this : k => v.name }
+output "seed_enabled" {
+  description = "Whether seeding is enabled in configuration."
+  value       = var.seed.enabled
 }
 
-output "warehouse_fully_qualified_names" {
-  description = "The fully qualified names of the warehouses."
-  value       = { for k, v in snowflake_warehouse.this : k => v.fully_qualified_name }
+output "seed_executed" {
+  description = "Whether the seed was actually executed (enabled and not blocked)."
+  value       = local.should_seed
 }
 
-output "warehouse_sizes" {
-  description = "The sizes of the warehouses."
-  value       = { for k, v in snowflake_warehouse.this : k => v.warehouse_size }
+output "seed_blocked" {
+  description = "Whether seeding was blocked due to environment restrictions."
+  value       = local.is_blocked
 }
 
-output "warehouse_states" {
-  description = "The states of the warehouses (STARTED or SUSPENDED)."
-  value       = { for k, wh in var.warehouse_configs : k => wh.initially_suspended ? "SUSPENDED" : "STARTED" }
+output "seed_environment" {
+  description = "The current environment for seeding."
+  value       = var.seed.environment
 }
 
-output "warehouses" {
-  description = "All warehouse resources."
-  value       = snowflake_warehouse.this
+output "seed_target" {
+  description = "The target table for seeding (database.schema.table)."
+  value       = "${var.seed.database}.${var.seed.schema}.${var.seed.table}"
+}
+
+output "seed_version" {
+  description = "The seed version used for re-run control."
+  value       = var.seed.seed_version
+}
+
+output "seed_trigger_key" {
+  description = "The computed trigger key (for debugging re-run behavior)."
+  value       = local.trigger_key
+}
+
+output "seed_sql_source" {
+  description = "The source of the SQL (script_path or sql_text)."
+  value       = var.seed.script_path != null && local.sql_from_file != null ? "script_path" : "sql_text"
 }

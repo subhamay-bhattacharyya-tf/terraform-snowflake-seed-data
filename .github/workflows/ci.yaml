@@ -62,7 +62,6 @@ jobs:
       matrix:
         example:
           - examples/basic
-          - examples/multiple-warehouses
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -112,14 +111,14 @@ jobs:
           go mod download
         working-directory: test
 
-      - name: Run Terratest - Single Warehouse
-        id: single-warehouse-test
+      - name: Run Terratest - Seed Inline SQL
+        id: seed-inline-test
         run: |
           set -o pipefail
-          go test -v -timeout 30m -run TestSingleWarehouse 2>&1 | tee single_warehouse_output.txt
-          echo "## Single Warehouse Test Results" >> $GITHUB_STEP_SUMMARY
+          go test -v -timeout 30m -run TestSeedInlineSQL 2>&1 | tee seed_inline_output.txt
+          echo "## Seed Inline SQL Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cat single_warehouse_output.txt >> $GITHUB_STEP_SUMMARY
+          cat seed_inline_output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
         working-directory: test
         env:
@@ -129,14 +128,31 @@ jobs:
           SNOWFLAKE_ROLE: ${{ vars.SNOWFLAKE_ROLE }}
           SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
 
-      - name: Run Terratest - Multiple Warehouses
-        id: multiple-warehouses-test
+      - name: Run Terratest - Seed Blocked Environment
+        id: seed-blocked-test
         run: |
           set -o pipefail
-          go test -v -timeout 30m -run TestMultipleWarehouses 2>&1 | tee multiple_warehouses_output.txt
-          echo "## Multiple Warehouses Test Results" >> $GITHUB_STEP_SUMMARY
+          go test -v -timeout 30m -run TestSeedBlockedEnvironment 2>&1 | tee seed_blocked_output.txt
+          echo "## Seed Blocked Environment Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          cat multiple_warehouses_output.txt >> $GITHUB_STEP_SUMMARY
+          cat seed_blocked_output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        working-directory: test
+        env:
+          SNOWFLAKE_ORGANIZATION_NAME: ${{ vars.SNOWFLAKE_ORGANIZATION_NAME }}
+          SNOWFLAKE_ACCOUNT_NAME: ${{ vars.SNOWFLAKE_ACCOUNT_NAME }}
+          SNOWFLAKE_USER: ${{ vars.SNOWFLAKE_USER }}
+          SNOWFLAKE_ROLE: ${{ vars.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+
+      - name: Run Terratest - Seed Disabled
+        id: seed-disabled-test
+        run: |
+          set -o pipefail
+          go test -v -timeout 30m -run TestSeedDisabled 2>&1 | tee seed_disabled_output.txt
+          echo "## Seed Disabled Test Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat seed_disabled_output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
         working-directory: test
         env:

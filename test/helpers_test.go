@@ -15,12 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type WarehouseProps struct {
-	Name    string
-	Size    string
-	Comment string
-}
-
 func openSnowflake(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -71,10 +65,10 @@ func openSnowflake(t *testing.T) *sql.DB {
 	return db
 }
 
-func warehouseExists(t *testing.T, db *sql.DB, warehouseName string) bool {
+func tableExists(t *testing.T, db *sql.DB, database, schema, table string) bool {
 	t.Helper()
 
-	q := fmt.Sprintf("SHOW WAREHOUSES LIKE '%s';", escapeLike(warehouseName))
+	q := fmt.Sprintf("SHOW TABLES LIKE '%s' IN %s.%s;", escapeLike(table), database, schema)
 	rows, err := db.Query(q)
 	require.NoError(t, err)
 	defer func() { _ = rows.Close() }()
@@ -82,67 +76,45 @@ func warehouseExists(t *testing.T, db *sql.DB, warehouseName string) bool {
 	return rows.Next()
 }
 
-func fetchWarehouseProps(t *testing.T, db *sql.DB, warehouseName string) WarehouseProps {
+func countRows(t *testing.T, db *sql.DB, database, schema, table string) int {
 	t.Helper()
 
-	// SHOW WAREHOUSES returns columns in a specific order. We need to scan all columns
-	// to get name (col 0), size (col 3), and comment (col 10 in newer versions).
-	// Using a simpler approach: query rows and scan by column name using rows.Columns()
-	q := fmt.Sprintf("SHOW WAREHOUSES LIKE '%s';", escapeLike(warehouseName))
-	rows, err := db.Query(q)
+	q := fmt.Sprintf("SELECT COUNT(*) FROM %s.%s.%s;", database, schema, table)
+	var count int
+	err := db.QueryRow(q).Scan(&count)
 	require.NoError(t, err)
-	defer func() { _ = rows.Close() }()
+	return count
+}
 
-	cols, err := rows.Columns()
-	require.NoError(t, err)
+func createTestTable(t *testing.T, db *sql.DB, database, schema, table string) {
+	t.Helper()
 
-	// Find column indices for name, size, comment
-	nameIdx, sizeIdx, commentIdx := -1, -1, -1
-	for i, col := range cols {
-		switch col {
-		case "name":
-			nameIdx = i
-		case "size":
-			sizeIdx = i
-		case "comment":
-			commentIdx = i
-		}
-	}
-	require.NotEqual(t, -1, nameIdx, "name column not found in SHOW WAREHOUSES output")
-	require.NotEqual(t, -1, sizeIdx, "size column not found in SHOW WAREHOUSES output")
-	require.NotEqual(t, -1, commentIdx, "comment column not found in SHOW WAREHOUSES output")
-
-	require.True(t, rows.Next(), "No warehouse found matching %s", warehouseName)
-
-	// Create slice to hold all column values
-	values := make([]interface{}, len(cols))
-	valuePtrs := make([]interface{}, len(cols))
-	for i := range values {
-		valuePtrs[i] = &values[i]
-	}
-
-	err = rows.Scan(valuePtrs...)
+	// Create database if not exists
+	_, err := db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s;", database))
 	require.NoError(t, err)
 
-	// Extract the values we need
-	getName := func(v interface{}) string {
-		if v == nil {
-			return ""
-		}
-		if s, ok := v.(string); ok {
-			return s
-		}
-		if b, ok := v.([]byte); ok {
-			return string(b)
-		}
-		return fmt.Sprintf("%v", v)
-	}
+	// Create schema if not exists
+	_, err = db.Exec(fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s.%s;", database, schema))
+	require.NoError(t, err)
 
-	return WarehouseProps{
-		Name:    getName(values[nameIdx]),
-		Size:    getName(values[sizeIdx]),
-		Comment: getName(values[commentIdx]),
-	}
+	// Create table
+	q := fmt.Sprintf(`
+		CREATE OR REPLACE TABLE %s.%s.%s (
+			id INTEGER,
+			name VARCHAR(100),
+			created_at TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+		);
+	`, database, schema, table)
+	_, err = db.Exec(q)
+	require.NoError(t, err)
+}
+
+func dropTestSchema(t *testing.T, db *sql.DB, database, schema string) {
+	t.Helper()
+
+	q := fmt.Sprintf("DROP SCHEMA IF EXISTS %s.%s CASCADE;", database, schema)
+	_, err := db.Exec(q)
+	require.NoError(t, err)
 }
 
 func mustEnv(t *testing.T, key string) string {

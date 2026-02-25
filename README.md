@@ -73,7 +73,7 @@ module "seed" {
 | Name | Version |
 |------|---------|
 | terraform | >= 1.3.0 |
-| snowflake | >= 0.87.0 |
+| snowflake | >= 0.89.0 |
 | null | >= 3.0.0 |
 
 ## Providers

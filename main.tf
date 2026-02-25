@@ -35,9 +35,9 @@ locals {
   ) : ""
 }
 
-# Execute the seed SQL using snowflake_unsafe_execute
+# Execute the seed SQL using snowflake_execute
 # This resource will re-run when trigger_key changes
-resource "snowflake_unsafe_execute" "seed" {
+resource "snowflake_execute" "seed" {
   count = local.should_seed && local.effective_sql != "" ? 1 : 0
 
   execute = local.effective_sql
